@@ -12,7 +12,7 @@ description: >-
   for free tools.
 
 # UPDATE after public repo publish
-source: https://github.com/REPLACE_ME/robotsshop-mcp
+source: https://github.com/AnalogHubris/robotsshop-mcp
 
 transport:
   type: stdio
@@ -25,8 +25,8 @@ transport:
 install:
   type: git
   # UPDATE after public repo publish
-  url: https://github.com/REPLACE_ME/robotsshop-mcp.git
-  ref: main
+  url: https://github.com/AnalogHubris/robotsshop-mcp.git
+  ref: 52e7e1e3e46eeca79be8f1d794b0f7adeccb1952
   bootstrap:
     - "python3 -m venv .venv"
     - ".venv/bin/pip install -r requirements.txt"
