@@ -1,8 +1,5 @@
-# Nous-approved MCP catalog entry (DRAFT — not merged).
 # Target: hermes-agent/optional-mcps/robotsshop/manifest.yaml
-# After public git is live: set install.url + ref (commit SHA preferred).
-#
-# Schema version 1.
+# Merged via PR review = Nous catalog approval.
 manifest_version: 1
 
 name: robotsshop
@@ -11,7 +8,6 @@ description: >-
   mismatches, free→paid onramp, free trips). stdio FastMCP; no API key required
   for free tools.
 
-# UPDATE after public repo publish
 source: https://github.com/AnalogHubris/robotsshop-mcp
 
 transport:
@@ -24,9 +20,8 @@ transport:
 
 install:
   type: git
-  # UPDATE after public repo publish
   url: https://github.com/AnalogHubris/robotsshop-mcp.git
-  ref: bbce5009c0ed4dfe739a5f2a1fda9251bff130a4
+  ref: b354653a74396285816c89169c17b125fe1284e9
   bootstrap:
     - "python3 -m venv .venv"
     - ".venv/bin/pip install -r requirements.txt"
@@ -43,16 +38,15 @@ tools:
     - lookup
     - free_trips
     - paid_routes_help
-  # payto_mismatches is alias of mismatches — leave optional
-  # default list is free-only; no paid mutations in MCP
 
 post_install: |
-  RobotsShop Trust Index talks to the public API (default https://api.robotsshop.io).
-  Free tools never attach payment. Paid depth is HTTP x402 (Base USDC) — see paid_routes_help.
+  RobotsShop Trust Index uses public API https://api.robotsshop.io by default.
+  Free tools never attach payment. Paid depth is HTTP x402 (Base USDC).
 
-  Suggested habit: onramp → mismatches → lookup before spending USDC on an endpoint.
+  Habit: onramp → mismatches → lookup before spending USDC.
 
   Site: https://robotsshop.io
+  Repo: https://github.com/AnalogHubris/robotsshop-mcp
   Contact: hello@robotsshop.io
 
   Start a new Hermes session (or /reload-mcp) to load tools.
