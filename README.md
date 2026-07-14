@@ -29,7 +29,7 @@ Paid HTTP (Base USDC) is separate — see `paid_routes_help`. MCP free tools nev
 ## Quick start
 
 ```bash
-git clone <this-repo> robotsshop-mcp && cd robotsshop-mcp
+git clone https://github.com/AnalogHubris/robotsshop-mcp.git && cd robotsshop-mcp
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ./run_mcp.sh --smoke   # → SMOKE_OK
