@@ -21,7 +21,7 @@ transport:
 install:
   type: git
   url: https://github.com/AnalogHubris/robotsshop-mcp.git
-  ref: b354653a74396285816c89169c17b125fe1284e9
+  ref: 06fd3da3564f57930b1c4b1d2eab07c4867d07b1
   bootstrap:
     - "python3 -m venv .venv"
     - ".venv/bin/pip install -r requirements.txt"
