@@ -419,12 +419,19 @@ def run_smoke() -> int:
                 len(help_body.get("free_mcp_tools") or []),
             )
 
-        sp = json.loads(tool_swartzpath(doi="10.1371/journal.pone.0000308"))
-        if sp.get("grade") != "A" or not (sp.get("pdf_url") or "").startswith("http"):
-            print("swartzpath FAIL", {k: sp.get(k) for k in ("grade", "pdf_url", "error", "ok")})
+        # swartzpath is METERED at the API ($0.01 doi/q resolve, 2026-08-23+).
+        # Free MCP behavior = bare discovery call works; doi/q call surfaces the
+        # x402 paid gate (HTTP 402 → error with paid-routes guidance), never a crash.
+        sp_bare = json.loads(tool_swartzpath())
+        sp_gate = json.loads(tool_swartzpath(doi="10.1371/journal.pone.0000308"))
+        if not (sp_bare.get("product") == "Swartzpath"):
+            print("swartzpath FAIL bare discovery", {k: sp_bare.get(k) for k in ("product", "error", "ok")})
             ok = False
+        elif "PAYMENT-REQUIRED" in (sp_gate.get("detail") or "") or "x402" in (sp_gate.get("detail") or "").lower():
+            print("swartzpath OK paid-gate surfaced")
         else:
-            print("swartzpath OK grade", sp.get("grade"), "doi", sp.get("doi"))
+            print("swartzpath FAIL unexpected", {k: sp_gate.get(k) for k in ("grade", "pdf_url", "error", "ok")})
+            ok = False
 
         if ok:
             print("SMOKE_OK")
