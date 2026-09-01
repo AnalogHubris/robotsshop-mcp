@@ -29,7 +29,7 @@ from typing import Any
 
 import httpx
 
-__version__ = "1.1.0"
+__version__ = "1.3.0"
 
 API = os.environ.get("TRUST_INDEX_API", "https://api.robotsshop.io").rstrip("/")
 SITE = "https://robotsshop.io"
@@ -121,6 +121,71 @@ def tool_lookup(url: str) -> str:
         return _error_payload("lookup_failed", str(e), url=url)
 
 
+def tool_endpoint(url: str) -> str:
+    """Free single-endpoint trust snapshot by full resource URL (alias of lookup)."""
+    try:
+        url = (url or "").strip()
+        if len(url) < 8:
+            return _error_payload(
+                "invalid_url",
+                "url must be a full resource URL (min 8 chars)",
+                url=url,
+            )
+        data = _get("/v0/endpoint", {"url": url})
+        return json.dumps(data, indent=2)
+    except Exception as e:
+        return _error_payload("endpoint_failed", str(e), url=url)
+
+
+def tool_settlements(
+    ok: str = "",
+    hashed: str = "",
+    verified: str = "",
+    offset: int = 0,
+    limit: int = 200,
+) -> str:
+    """Free proof-backed settlement ledger for paid x402 attempts (on-chain receipts)."""
+    try:
+        params: dict[str, Any] = {"limit": max(1, min(500, int(limit)))}
+        if int(offset) > 0:
+            params["offset"] = int(offset)
+        for flag in ("ok", "hashed", "verified"):
+            v = locals().get(flag)
+            if v in ("true", "True", "1"):
+                params[flag] = "true"
+            elif v in ("false", "False", "0"):
+                params[flag] = "false"
+        data = _get("/v0/settlements", params)
+        return json.dumps(data, indent=2)
+    except Exception as e:
+        return _error_payload("settlements_failed", str(e), offset=offset, limit=limit)
+
+
+def tool_entities(q: str = "") -> str:
+    """SpookFiles named-entity search — 892k entities across 6.5M declassified docs."""
+    try:
+        q = (q or "").strip()
+        params = {"q": q} if q else None
+        data = _get("/v0/spookfiles/entities", params)
+        return json.dumps(data, indent=2)
+    except Exception as e:
+        return _error_payload("entities_failed", str(e), q=q)
+
+
+def tool_swartzpath(doi: str = "", q: str = "") -> str:
+    """Legal OA path. Named for Aaron Swartz. Free. Not Sci-Hub."""
+    try:
+        params: dict[str, str] = {}
+        if (doi or "").strip():
+            params["doi"] = doi.strip()
+        elif (q or "").strip():
+            params["q"] = q.strip()
+        data = _get("/v0/swartzpath", params or None)
+        return json.dumps(data, indent=2)
+    except Exception as e:
+        return _error_payload("swartzpath_failed", str(e), doi=doi, q=q)
+
+
 def tool_onramp() -> str:
     """Free→paid agent recipe: mismatches → free trips → depth → residual."""
     try:
@@ -165,6 +230,10 @@ def tool_paid_routes_help() -> str:
                 "onramp",
                 "free_trips",
                 "paid_routes_help",
+                "swartzpath",
+                "settlements",
+                "endpoint",
+                "entities",
             ],
             "paid_http_x402": {
                 "search": {
@@ -297,6 +366,47 @@ def run_smoke() -> int:
                 ep.get("grade"),
             )
 
+        st = json.loads(tool_settlements(limit=3))
+        if st.get("ok") is False and "note" not in st:
+            print("settlements FAIL", st)
+            ok = False
+        else:
+            print(
+                "settlements OK total_settled",
+                st.get("total_settled"),
+                "shown",
+                st.get("count"),
+                "chain_ok",
+                "on_chain_proof" in st,
+            )
+
+        ep = json.loads(tool_endpoint("https://ai16z.ai/verify"))
+        if ep.get("ok") is False and "endpoint" not in ep and "detail" not in ep:
+            print("endpoint FAIL", ep)
+            ok = False
+        else:
+            print(
+                "endpoint OK url",
+                "https://ai16z.ai/verify",
+                "looked up",
+                "endpoint" in ep or "detail" in ep,
+            )
+
+        ents = json.loads(tool_entities("epstein"))
+        if ents.get("ok") is False and "graph" not in ents:
+            print("entities FAIL", ents)
+            ok = False
+        else:
+            graph = ents.get("graph") or {}
+            print(
+                "entities OK graph_present",
+                graph.get("present"),
+                "count",
+                graph.get("count"),
+                "product",
+                ents.get("product"),
+            )
+
         help_body = json.loads(tool_paid_routes_help())
         if help_body.get("brand") != SELLER:
             print("paid_routes_help brand FAIL", help_body.get("brand"))
@@ -308,6 +418,13 @@ def run_smoke() -> int:
                 "tools",
                 len(help_body.get("free_mcp_tools") or []),
             )
+
+        sp = json.loads(tool_swartzpath(doi="10.1371/journal.pone.0000308"))
+        if sp.get("grade") != "A" or not (sp.get("pdf_url") or "").startswith("http"):
+            print("swartzpath FAIL", {k: sp.get(k) for k in ("grade", "pdf_url", "error", "ok")})
+            ok = False
+        else:
+            print("swartzpath OK grade", sp.get("grade"), "doi", sp.get("doi"))
 
         if ok:
             print("SMOKE_OK")
@@ -359,6 +476,27 @@ def run_mcp() -> None:
         return tool_onramp()
 
     @mcp.tool()
+    def settlements(
+        ok: str = "",
+        hashed: str = "",
+        verified: str = "",
+        offset: int = 0,
+        limit: int = 200,
+    ) -> str:
+        """Proof-backed settlement ledger for paid x402 attempts. Filters: ok/hashed/verified true|false, offset, limit."""
+        return tool_settlements(ok=ok, hashed=hashed, verified=verified, offset=offset, limit=limit)
+
+    @mcp.tool()
+    def endpoint(url: str) -> str:
+        """Free single-endpoint trust snapshot by full resource URL (SpookFiles/trust lookup)."""
+        return tool_endpoint(url)
+
+    @mcp.tool()
+    def entities(q: str = "") -> str:
+        """SpookFiles named-entity search — 892k named entities across 6.5M declassified docs. Query a person/org/place."""
+        return tool_entities(q)
+
+    @mcp.tool()
     def free_trips() -> str:
         """Remaining free judgment trips today (top/search) for this IP."""
         return tool_free_trips()
@@ -367,6 +505,11 @@ def run_mcp() -> None:
     def paid_routes_help() -> str:
         """Paid x402 routes, prices, payTo wallet, residual monitor."""
         return tool_paid_routes_help()
+
+    @mcp.tool()
+    def swartzpath(doi: str = "", q: str = "") -> str:
+        """Legal OA path to a paper. Named for Aaron Swartz. DOI or title → grade + legal PDF URL if one exists. Not Sci-Hub. Closed stays closed. Free."""
+        return tool_swartzpath(doi=doi, q=q)
 
     @mcp.tool()
     def payto_mismatches(limit: int = 15) -> str:

@@ -21,8 +21,12 @@ Independent probes: **who actually gets paid** (payTo integrity), not vibes.
 | `stats` | Market summary |
 | `leaderboard` | Domain scores |
 | `lookup` | One endpoint snapshot |
+| `endpoint` | One endpoint snapshot (alias of lookup) |
+| `settlements` | Proof-backed paid-attempt ledger (on-chain receipts) |
+| `entities` | SpookFiles named-entity search — 892k entities over 6.5M declassified docs |
 | `free_trips` | Remaining free top/search trips |
 | `paid_routes_help` | Paid x402 routes + payTo |
+| `swartzpath` | Legal OA path to a paper |
 
 Paid HTTP (Base USDC) is separate — see `paid_routes_help`. MCP free tools never attach payment.
 
@@ -66,10 +70,22 @@ Same shape in `.cursor/mcp.json`.
 | `TRUST_INDEX_API` | `https://api.robotsshop.io` |
 | `TRUST_INDEX_TIMEOUT` | `30` |
 
-## Hermes catalog (stretch)
+## Hermes catalog
 
-See `hermes-catalog/manifest.yaml` — PR target: NousResearch/hermes-agent `optional-mcps/robotsshop/`.  
-Requires public git URL + pinned ref after publish.
+`hermes-catalog/manifest.yaml` is the Nous approved entry → target
+`NousResearch/hermes-agent optional-mcps/robotsshop/`. Install in Hermes:
+
+```bash
+hermes mcp catalog          # list remote catalog entries
+hermes mcp install robotsshop
+```
+
+The catalog clones the pinned git commit, runs `.venv` bootstrap, and enables
+the free tools via `tools.default_enabled`. Requires a public git URL + pinned
+commit SHA (manifest `install.ref`). Agents get 11 free MCP tools — every one a
+preview into the paid x402 depth (`/v0/search`, `/v0/top`, `/v0/live`,
+`/v0/snapshot`, `/v0/monitor/subscribe`). `entities` (SpookFiles) is the
+traffic hook: free named-entity graph → paid `deep=1` per-entity doc links.
 
 ## License
 
