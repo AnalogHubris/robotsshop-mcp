@@ -35,14 +35,12 @@ install:
   type: git
   url: https://github.com/AnalogHubris/robotsshop-mcp.git
   # Pinned per catalog dependency policy: full commit SHA (branches and tags
-  # can be moved; SHAs cannot), and the pinned commit must be at least
-  # 2 weeks old at pin time — same supply-chain rules as pyproject
-  # dependencies. NOTE (2026-07-15 rebase): package shipped 2026-07-14 so this
-  # pin is younger than the usual 2-week cooldown. Free tools only, no secrets,
-  # public HTTPS API. Maintainers may hold merge until the pin ages or grant a
-  # one-time waiver. Bumping the pin is a PR to this manifest.
-  # Commit: chore: pin catalog ref after docs commit (2026-07-14)
-  ref: 6f88737bbbda06984faa69931b8cc87104597556
+  # can be moved; SHAs cannot). NOTE (2026-08-31): v1.3.0 adds settlements,
+  # entities, and endpoint tools and pins mcp<2 (mcp 2.x is incompatible).
+  # Fresh pin younger than the usual 2-week cooldown (free tools, no secrets,
+  # public HTTPS API). Maintainers may hold merge until the pin ages.
+  # Commit: feat(mcp): add settlements, entities (SpookFiles), endpoint tools
+  ref: 1e9a2e742233aefe8d88c860401055f2064927a6
   # Bootstrap commands run inside the cloned directory after clone.
   bootstrap:
     - "python3 -m venv .venv"
