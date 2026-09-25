@@ -419,16 +419,23 @@ def run_smoke() -> int:
                 len(help_body.get("free_mcp_tools") or []),
             )
 
-        # swartzpath is METERED at the API ($0.01 doi/q resolve, 2026-08-23+).
-        # Free MCP behavior = bare discovery call works; doi/q call surfaces the
-        # x402 paid gate (HTTP 402 → error with paid-routes guidance), never a crash.
+        # swartzpath was METERED ($0.01 doi/q resolve) from 2026-08-23, but the
+        # locked FREE YEAR (PAYMENTS=off, free through 2026-12-31) means a doi call
+        # now RESOLVES instead of gating. Accept EITHER shape: a 402 gate when paid
+        # mode is on, real resolution when free. Asserting only the gate made this
+        # smoke FAIL whenever the shop was working correctly.
         sp_bare = json.loads(tool_swartzpath())
         sp_gate = json.loads(tool_swartzpath(doi="10.1371/journal.pone.0000308"))
+        detail = sp_gate.get("detail") or ""
+        gated = "PAYMENT-REQUIRED" in detail or "x402" in detail.lower()
+        resolved = bool(sp_gate.get("pdf_url")) or bool(sp_gate.get("grade"))
         if not (sp_bare.get("product") == "Swartzpath"):
             print("swartzpath FAIL bare discovery", {k: sp_bare.get(k) for k in ("product", "error", "ok")})
             ok = False
-        elif "PAYMENT-REQUIRED" in (sp_gate.get("detail") or "") or "x402" in (sp_gate.get("detail") or "").lower():
+        elif gated:
             print("swartzpath OK paid-gate surfaced")
+        elif resolved:
+            print("swartzpath OK resolved (free year: PAYMENTS off)")
         else:
             print("swartzpath FAIL unexpected", {k: sp_gate.get(k) for k in ("grade", "pdf_url", "error", "ok")})
             ok = False
